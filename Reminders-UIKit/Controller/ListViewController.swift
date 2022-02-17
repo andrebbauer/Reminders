@@ -94,6 +94,9 @@ extension ListViewController {
     }
     
     remindersViewController.context = self.context
+    
+    let list = fetchedResultsController.object(at: indexPath)
+    remindersViewController.list = list
   }
   
   private func handleAddNewListSegue(newListViewController: NewListViewController) {
@@ -118,5 +121,18 @@ extension ListViewController {
     
     cell.textLabel?.text = list.title
     return cell
+  }
+  
+  override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+    true
+  }
+  
+  override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+    if editingStyle == .delete {
+      let list = fetchedResultsController.object(at: indexPath)
+      context?.delete(list)
+      
+      try? context?.save()
+    }
   }
 }

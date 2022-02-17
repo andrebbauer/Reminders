@@ -1,12 +1,54 @@
 import CoreData
 import UIKit
 
-class RemindersViewController: UITableViewController {
+class RemindersViewController: UITableViewController, NSFetchedResultsControllerDelegate {
   var list: List?
   var context: NSManagedObjectContext?
   
+  private lazy var fetchedResultsController: NSFetchedResultsController<Reminder> = {
+    let fetchRequest: NSFetchRequest<Reminder> = Reminder.fetchRequest()
+    let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
+    fetchRequest.sortDescriptors = [sortDescriptor]
+    
+    let predicate = NSPredicate(format: "%K == %@", "list.title", self.list!.title)
+    fetchRequest.predicate = predicate
+    
+    let frc = NSFetchedResultsController(fetchRequest: fetchRequest,
+                                         managedObjectContext: self.context!,
+                                         sectionNameKeyPath: nil,
+                                         cacheName: nil)
+    
+    frc.delegate = self
+    return frc
+  }()
+  
+  lazy var dataSource: UITableViewDiffableDataSource<String, NSManagedObjectID> = {
+    let dataSource = UITableViewDiffableDataSource<String, NSManagedObjectID>(tableView: tableView) { (tableView, indexPath, objectID) -> UITableViewCell? in
+      guard let reminder = try? self.context?.existingObject(with: objectID) as? Reminder else { return nil }
+      
+      let cell = UITableViewCell(style: .default, reuseIdentifier: "ReminderCell")
+      cell.textLabel?.text = reminder.title
+      
+      return cell
+    }
+    
+    tableView.dataSource = dataSource
+    
+    return dataSource
+  }()
+  
   override func viewDidLoad() {
     super.viewDidLoad()
+    do {
+      try fetchedResultsController.performFetch()
+    } catch {
+      fatalError("Core Data fetch error")
+    }
+  }
+  
+  func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference) {
+    let remindersSnapshot = snapshot as NSDiffableDataSourceSnapshot<String, NSManagedObjectID>
+    dataSource.apply(remindersSnapshot)
   }
 }
 

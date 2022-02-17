@@ -6,6 +6,7 @@ final class NewReminderViewController: UITableViewController {
   @IBOutlet weak var attachmentImageView: UIImageView!
   var context: NSManagedObjectContext?
   var list: List?
+  var attachment: Data?
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -23,6 +24,7 @@ final class NewReminderViewController: UITableViewController {
     let newReminder = Reminder(context: context)
     newReminder.title = title
     newReminder.list = list
+    newReminder.attachment = attachment
     do {
       try context.save()
       dismiss(animated: true, completion: nil)
@@ -53,9 +55,10 @@ extension NewReminderViewController: UIImagePickerControllerDelegate, UINavigati
   ) {
     guard let image = info[.originalImage] as? UIImage else { return }
     self.attachmentImageView.image = image
-    // Customize
+    self.attachment = image.pngData()
     
     dismiss(animated: true, completion: nil)
   }
+  
 }
 
